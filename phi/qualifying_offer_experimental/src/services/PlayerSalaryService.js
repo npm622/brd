@@ -7,6 +7,8 @@ export const DATASET_URI = 'http://localhost:3000/swe/';
 class PlayerSalaryService {
 
   fetchAll() {
+    let id = 0;
+
     return new Promise((resolve, reject) => {
 
       request(DATASET_URI, (err, res, html) => {
@@ -27,11 +29,12 @@ class PlayerSalaryService {
               const salaryString = tr.children('.player-salary').text();
 
               return {
+                id: id++, // TODO: try id++ here
                 player: parseNameString(nameString),
                 salary: parseSalaryString(salaryString)
               };
             })
-            .get()
+            .get();
 
         return resolve(playerSalaries);
       });

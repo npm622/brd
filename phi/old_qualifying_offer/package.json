@@ -1,7 +1,0 @@
-{
-  "name"         : "brd-phi-qo",
-  "version"      : "0.0.0",
-  "description"  : "determine upcoming qualifying offer amounts",
-  "main"         : "index.js",
-  "author"       : "nick makes"
-}

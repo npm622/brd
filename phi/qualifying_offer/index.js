@@ -1,9 +1,13 @@
 const request = require('request'),
-  cheerio = require('cheerio');
+  cheerio = require('cheerio'),
+  formatCurrency = require('format-currency');
 
 const DATA_URL = 'https://questionnaire-148920.appspot.com/swe/';
 
+console.log(`fetching player salaries from: ${DATA_URL}`);
+
 request(DATA_URL, (err, res, html) => {
+  console.log('...');
   if (err) {
     console.log(`unexpected error occurred: ${JSON.stringify(err)}`);
     process.exit(1)
@@ -12,43 +16,57 @@ request(DATA_URL, (err, res, html) => {
   const result = {
     datasetThreshold: 125,
     datasetSize: 0,
-    playersWithNoSalaryData: [],
-    playerSalaries: [],
-    salaryFrequencies: {}
+    qualifyingOffer: undefined,
+    missingSalaries: [],
+    salaryBuckets: [],
+    playerSalaries: []
   };
 
   const $ = cheerio.load(html);
   $('#salaries-table').find('tbody').children().each((idx, elem) => {
     const tr = $(elem);
 
-    const name = tr.find('.player-name').text();
-    const currency = tr.children('.player-salary').text();
+    const nameString = tr.find('.player-name').text();
+    const salaryString = tr.children('.player-salary').text();
 
-    const player = parseNameString(name)
-    const salary = parseCurrencyString(currency);
+    const player = parseNameString(nameString)
+    const salary = parseSalaryString(salaryString);
 
     result.datasetSize++;
-    if (salary === 0) {
-      result.playersWithNoSalaryData.push(player);
+    if (!salary) {
+      result.missingSalaries.push(player);
     } else {
       result.playerSalaries.push({ player, salary })
     }
   }).get();
 
   sortSalaries(result.playerSalaries);
-  sortPlayers(result.playersWithNoSalaryData);
+  sortPlayers(result.missingSalaries);
 
   result.qualifyingOffer = calculateQualifyingOffer(result.playerSalaries, result.datasetThreshold);
-  result.salaryFrequencies = curateSalaryFrequencies(result.playerSalaries);
+  result.salaryBuckets = calculateSalaryBuckets(result.playerSalaries);
 
-  result.playerSalaries.forEach(playerSalary => console.log(playerSalary));
-  console.log("\n~~~~    no data    ~~~~");
-  result.playersWithNoSalaryData.forEach(player => console.log(player));
-  console.log("\n~~~~    qualifying offer    ~~~~");
-  console.log(result.qualifyingOffer);
-  console.log("\n~~~~    salary frequencies    ~~~~");
-  console.log(result.salaryFrequencies)
+  console.log(`needed ${result.datasetThreshold} salaries, found ${result.datasetSize}`);
+  console.log(`\n--------\nthe projected qualifying offer is: ${formatSalary(result.qualifyingOffer)}\n--------\n`);
+  console.log('players with missing salaries:');
+  result.missingSalaries.forEach(r => console.log(`\t- ${r.first} ${r.last}`))
+  console.log('salary frequencies (top ${result.datasetThreshold}):');
+  let salaryBucketCount = 0;
+  result.salaryBuckets
+    .filter(r => {
+      const shouldContinue = salaryBucketCount <= result.datasetThreshold;
+      salaryBucketCount += r.occurences;
+      return shouldContinue;
+    })
+    .forEach(r => console.log(`\t( ${formatSalary(r.salary)}, ${r.occurences} )` ));
+  console.log(`raw salary data (top ${result.datasetThreshold}):`);
+  result.playerSalaries
+    .filter((_, i) => i < result.datasetThreshold)
+    .forEach(r => console.log(`\t( '${r.player.first} ${r.player.last}', ${formatSalary(r.salary)} )`));
 });
+
+const opts = { format: '%s%v', symbol: '$' };
+const formatSalary = (salary) => formatCurrency(salary, opts);
 
 // ======= qualifying offer calculation =======
 
@@ -72,7 +90,7 @@ const calculateQualifyingOffer = (playerSalaries, threshold) => {
 
 // ======= salary frequencies =======
 
-const curateSalaryFrequencies = (playerSalaries) => {
+const calculateSalaryBuckets = (playerSalaries) => {
   const freqs = {};
 
   if (!playerSalaries) {
@@ -82,13 +100,18 @@ const curateSalaryFrequencies = (playerSalaries) => {
   for (let i = 0; i < playerSalaries.length; i++) {
     const { player, salary } = playerSalaries[i];
 
-    if (!freqs[salary.toString()]) {
-      freqs[salary.toString()] = [];
+    if (salary) {
+      if (!freqs[salary]) {
+        freqs[salary] = 0;
+      }
+      freqs[salary]++;
     }
-    freqs[salary.toString()].push(player);
   }
 
-  return freqs;
+  return Object.keys(freqs)
+      .filter(key => freqs.hasOwnProperty(key))
+      .map(key => ({ salary: key, occurences: freqs[key]}))
+      .reverse();
 }
 
 // ======= raw value parsing =======
@@ -99,7 +122,13 @@ const parseNameString = (name) => {
 };
 
 // h/t: https://stackoverflow.com/questions/559112/how-to-convert-a-currency-string-to-a-double-with-jquery-or-javascript
-const parseCurrencyString = (salary) => Number(salary.replace(/[^0-9\.-]+/g, ''));
+const parseSalaryString = (salary) => {
+  const val = salary.replace(/[^0-9.-]+/g, '');
+
+  if (val !== '') {
+    return Number(val);
+  }
+};
 
 // ======= player sorting by salary =======
 

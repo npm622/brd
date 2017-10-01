@@ -12,28 +12,22 @@ const withD3Renderer = ({
     }
 
     componentDidMount() {
-      this.props.incrementRenderCount('component')
-      this.props.incrementRenderCount('d3')
       this.component.renderD3('render')
     }
 
     componentDidUpdate(prevProps, prevState) {
-      this.props.incrementRenderCount('component')
       const shouldResize = props => _.pick(props, resizeOn)
       if (!shallowEqual(shouldResize(this.props), shouldResize(prevProps))) {
-        this.props.incrementRenderCount('d3')
         return this.component.renderD3('resize')
       }
       const shouldUpdate = props => _.pick(props, updateOn)
       if (!shallowEqual(shouldUpdate(this.props), shouldUpdate(prevProps))) {
-        this.props.incrementRenderCount('d3')
         this.component.renderD3('update')
       }
     }
 
     render() {
-      const {incrementRenderCount, ...otherProps} = this.props
-      return <WrappedComponent ref={this.setRef} {...otherProps} />
+      return <WrappedComponent ref={this.setRef} {...this.props} />
     }
   }
 }

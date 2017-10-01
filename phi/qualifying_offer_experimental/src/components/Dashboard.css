@@ -1,0 +1,44 @@
+.Dashboard {
+  position: relative;
+  display: -webkit-flex;
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  margin-top: -100px;
+  padding-top: 100px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  will-change: overflow;
+}
+
+.Dashboard-missing, .Dashboard-salaries {
+  overflow: auto;
+  height: auto;
+  padding: 1rem;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: none;
+  border: 1px solid #dddddd
+}
+
+.Dashboard-missing::-webkit-scrollbar, .Dashboard-salaries::-webkit-scrollbar {
+  display: none;;
+}
+
+.Dashboard-missing {
+  width: 25%;
+  min-width: 100px;
+}
+
+.Dashboard-missing ul {
+  list-style: none;
+}
+
+.Dashboard-missing li {
+  margin: 5px 0;
+}
+
+.Dashboard-salaries {
+  -webkit-flex: 1;
+  flex: 1;
+  text-align: center;
+}
