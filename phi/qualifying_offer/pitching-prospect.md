@@ -7,9 +7,10 @@ Next, I would want a statistical profile of the prospect’s pitch inventory: wh
 Lastly, mental makeup information could come in the way of looking at slices of his pitching statistics in game situations such as shut-down**** or bounce-back***** innings.  This information could help identify potential areas of weakness that could signify whether a player is ready for promotion. 
 
 
-
+```cmd
 * or whatever remainder of a season is left at the time
 ** a Major League pitcher should eventually be expected to contribute 200+ innings each season
 *** by matching against all Major Leaguers’ pitch inventories (current and past)
 **** innings which follow a half-inning in which his team had scored runs
 ***** innings which follow an inning in which the opponent had scored runs
+```
