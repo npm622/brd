@@ -21,7 +21,10 @@ Please refer to [open-source](open-source.md) for my response.
 > Use the provided dataset to write a program or application that determines the monetary value of the upcoming qualifying offer and displays the amount along with any other relevant information or visualizations to the user.
 
 ---
-**As of 10:55PM EST, the projected qualifying offer amount is:* $15,392,074.48
+
+**Answer:**  
+As of 11:03PM EST, the projected qualifying offer amount is: $16,771,394.14
+
 ---
 
 My solution is self-contained in the single file found alongside this README as a Node.js program: [`index.js`](index.js).
