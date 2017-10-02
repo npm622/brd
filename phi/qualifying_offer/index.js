@@ -1,8 +1,20 @@
-const request = require('request'),
+const program = require('commander'),
+  request = require('request'),
   cheerio = require('cheerio'),
   formatCurrency = require('format-currency');
 
+const DATA_THRESHOLD = 125;
 const DATA_URL = 'https://questionnaire-148920.appspot.com/swe/';
+
+program
+  .version( '0.0.0' )
+  .option( '-t, --threshold <n>', 'Specify number of top contracts to average for qualifying offer amount [ default: 125 ]', DATA_THRESHOLD, parseInt )
+  .option( '-f, --frequency <n>', 'Specify number of data points to return representing a salary frequency chart (-1 for all)', DATA_THRESHOLD, parseInt )
+  .option( '-r, --raw-data <n>', 'Specify number of data points to return of raw data (-1 for all)', DATA_THRESHOLD, parseInt )
+  .parse( process.argv );
+
+const { threshold, frequency, rawData } = program;
+console.log(`{ threshold: ${threshold}, frequency: ${frequency}, rawData: ${rawData} }`);
 
 console.log(`fetching player salaries from: ${DATA_URL}`);
 
@@ -14,7 +26,7 @@ request(DATA_URL, (err, res, html) => {
   }
 
   const result = {
-    datasetThreshold: 125,
+    datasetThreshold: threshold,
     datasetSize: 0,
     qualifyingOffer: undefined,
     missingSalaries: [],
@@ -50,18 +62,23 @@ request(DATA_URL, (err, res, html) => {
   console.log(`\n--------\nthe projected qualifying offer is: ${formatSalary(result.qualifyingOffer)}\n--------\n`);
   console.log('players with missing salaries:');
   result.missingSalaries.forEach(r => console.log(`\t- ${r.first} ${r.last}`))
-  console.log('salary frequencies (top ${result.datasetThreshold}):');
+  const { datasetSize } = result;
+
   let salaryBucketCount = 0;
+  const salaryBucketLimit = Number(frequency) === -1 ? datasetSize : frequency;
+  console.log(`salary frequencies (top ${salaryBucketLimit}):`);
   result.salaryBuckets
     .filter(r => {
-      const shouldContinue = salaryBucketCount <= result.datasetThreshold;
+      const shouldContinue = salaryBucketCount <= salaryBucketLimit;
       salaryBucketCount += r.occurences;
       return shouldContinue;
     })
     .forEach(r => console.log(`\t( ${formatSalary(r.salary)}, ${r.occurences} )` ));
-  console.log(`raw salary data (top ${result.datasetThreshold}):`);
+
+  const rawDataLimit = Number(rawData) === -1 ? datasetSize : rawData;
+  console.log(`raw salary data (top ${rawDataLimit}):`);
   result.playerSalaries
-    .filter((_, i) => i < result.datasetThreshold)
+    .filter((_, i) => i < rawDataLimit)
     .forEach(r => console.log(`\t( '${r.player.first} ${r.player.last}', ${formatSalary(r.salary)} )`));
 });
 
